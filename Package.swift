@@ -15,5 +15,9 @@ let package = Package(
   ],
   targets: [
     .target(name: "ScenarioKit"),
+    .testTarget(
+      name: "ScenarioKitTests",
+      dependencies: ["ScenarioKit"]
+    ),
   ]
 )
