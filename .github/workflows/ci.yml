@@ -1,0 +1,59 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build-and-test:
+    runs-on: macos-15
+    timeout-minutes: 20
+
+    defaults:
+      run:
+        working-directory: Example/ScenarioDemo
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Show toolchain
+        run: xcodebuild -version
+
+      - name: Build production target
+        run: >-
+          xcodebuild
+          -quiet
+          -project ScenarioDemo.xcodeproj
+          -scheme ScenarioDemo
+          -destination 'generic/platform=iOS Simulator'
+          -derivedDataPath /tmp/ScenarioDemoProduction
+          CODE_SIGNING_ALLOWED=NO
+          build
+
+      - name: Build internal target
+        run: >-
+          xcodebuild
+          -quiet
+          -project ScenarioDemo.xcodeproj
+          -scheme ScenarioDemoInternal
+          -destination 'generic/platform=iOS Simulator'
+          -derivedDataPath /tmp/ScenarioDemoInternal
+          CODE_SIGNING_ALLOWED=NO
+          build
+
+      - name: Run iOS tests
+        run: >-
+          xcodebuild
+          -quiet
+          -project ScenarioDemo.xcodeproj
+          -scheme ScenarioDemoInternal
+          -destination 'platform=iOS Simulator,name=iPhone 16 Pro'
+          -derivedDataPath /tmp/ScenarioKitTests
+          CODE_SIGNING_ALLOWED=NO
+          test
